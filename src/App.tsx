@@ -1,17 +1,21 @@
 import { css } from "@emotion/react";
 import gsap from "gsap";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./assets/logo.svg?url";
+
+const pages = ["wiki", "about", "download", "screenshot"];
 
 export default function App() {
   const [started, setStarted] = useState(false);
+  const [opened, setOpened] = useState(false);
+  const [page, setPage] = useState(-1);
   const logoRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bigLinksRef = useRef<HTMLDivElement>(null);
 
   const startAnimation = () => {
-    if (started) return;
+    if (started || opened) return;
     setStarted(true);
 
     const logo = logoRef.current;
@@ -30,8 +34,6 @@ export default function App() {
     const tl = gsap.timeline({
       defaults: { ease: "power4.out" },
     });
-
-    console.log([...(bigLinks?.children ?? [])]);
 
     // 第一步：Logo放大到容器尺寸
     tl.to(
@@ -75,20 +77,72 @@ export default function App() {
       .from(
         [...(bigLinks?.children ?? [])],
         {
-          x: 500,
+          x: 700,
           opacity: 0,
-          stagger: 0.2,
+          stagger: 0.1,
           ease: "back.out",
           duration: 0.8,
         },
-        0.3
+        0
       );
+
+    tl.then(() => {
+      setOpened(true);
+    });
   };
 
-  const onBigLinkClick = (index: number) => {
+  const back = useCallback(() => {
+    if (!opened) return;
+    setPage(-1);
+    if (window.location.pathname !== "/") {
+      window.history.pushState("", "", "/");
+      onPopState();
+    }
+    console.log("back", page);
+
     const bigLinks = bigLinksRef.current;
     const links = [...(bigLinks?.children ?? [])];
-    const link = links[index];
+    const link = links[page];
+    const tl = gsap.timeline({
+      defaults: { ease: "power4.out" },
+    });
+    tl.to(
+      link,
+      {
+        x: 0,
+        y: 0,
+        duration: 0.5,
+      },
+      0
+    ).to(
+      link.querySelector("div"),
+      {
+        opacity: 1,
+      },
+      0
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, page]);
+  const onBigLinkClick = (index: number) => {
+    if (page > -1 || !opened) return;
+    setPage(index);
+    if (window.location.pathname !== `/${pages[index]}`) {
+      window.history.pushState("", "", `/${pages[index]}`);
+      onPopState();
+    }
+  };
+
+  const onPopState = useCallback(() => {
+    console.log(window.location.pathname, page);
+    if (window.location.pathname === "/") {
+      console.log("back", opened);
+      back();
+      return;
+    }
+
+    const bigLinks = bigLinksRef.current;
+    const links = [...(bigLinks?.children ?? [])];
+    const link = links[pages.indexOf(window.location.pathname.slice(1))];
     const rect = link.getBoundingClientRect();
     const tl = gsap.timeline({
       defaults: { ease: "power4.out" },
@@ -99,7 +153,6 @@ export default function App() {
       {
         x: 450 - rect.left,
         y: 100 - rect.top,
-        opacity: 1,
         duration: 0.5,
       },
       0
@@ -110,7 +163,12 @@ export default function App() {
       },
       0
     );
-  };
+  }, [back, opened, page]);
+
+  useEffect(() => {
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [onPopState, page]);
 
   return (
     <div
@@ -167,6 +225,7 @@ export default function App() {
             `}
           >
             <div
+              onClick={back}
               css={css`
                 position: absolute;
                 top: 50%;
@@ -178,7 +237,6 @@ export default function App() {
                 writing-mode: vertical-lr;
                 color: #5c75ec;
                 white-space: nowrap;
-                pointer-events: none;
                 /* 保持原始文字大小 */
                 transform: scale(1) translateY(-50%);
               `}
