@@ -1,0 +1,28 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+@font-face {
+  font-family: Josefin Sans;
+  font-weight: 200;
+  src: url("./assets/JosefinSans-ExtraLight.ttf") format("truetype");
+}
+@font-face {
+  font-family: PPWriter;
+  font-weight: 400;
+  src: url("./assets/PPWriter-RegularText.otf") format("opentype");
+}
+@font-face {
+  font-family: PPWriter;
+  font-weight: 400;
+  font-style: italic;
+  src: url("./assets/PPWriter-RegularItalic.otf") format("opentype");
+}
+@font-face {
+  font-family: Miriam Libre;
+  font-weight: 700;
+  src: url("./assets/MiriamLibre-Bold.ttf") format("truetype");
+}
